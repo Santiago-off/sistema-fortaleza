@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SISTEMA FORTALEZA - CMD CENTER</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <header>
+        <div class="search-container" style="margin-bottom: 15px;">
+            <input type="text" id="proc-search" 
+                placeholder="🔍 BUSCAR POR NOMBRE O PID..." 
+                onkeyup="filterProcesses(this.value)"
+                style="width: 100%; background: #050505; border: 1px solid #1a1a1a; color: #00ff41; padding: 10px; font-family: monospace; outline: none; border-radius: 4px;">
+        </div>
+        <div class="status-bar">
+            <span class="glitch">SISTEMA FORTALEZA v1.0</span>
+            <div class="nav-tabs">
+                <button onclick="switchTab('main-view')" id="btn-main" class="tab-btn active">MONITOR CENTRAL</button>
+                <button onclick="switchTab('recovery-view')" id="btn-recovery" class="tab-btn">CENTRO DE RECUPERACIÓN</button>
+            </div>
+            <span id="global-status" onclick="toggleGhostMode()" style="cursor:pointer; padding: 5px; border: 1px solid #333;">NÚCLEO PROTEGIDO</span>
+        </div>
+    </header>
+
+    <main id="main-view" class="tab-content">
+        <div id="node-map-container">
+            <h3>MAPA TÁCTICO DE CONEXIONES</h3>
+            <div id="map-canvas" style="width: 100%; height: 100%;"></div>
+        </div>
+
+        <div id="right-panel">
+            <div id="telemetry-panel">
+                <h3>ANÁLISIS DE FLUJO (LIVE)</h3>
+                <table>
+                    <thead>
+                        <tr><th>PROCESO</th><th>IP DESTINO</th><th>ESTADO</th><th>ACCIÓN</th></tr>
+                    </thead>
+                    <tbody id="table-body"></tbody>
+                </table>
+            </div>
+            <div id="log-panel">
+                <h3>REGISTRO DE INCIDENCIAS</h3>
+                <div id="log-content"></div>
+            </div>
+        </div>
+    </main>
+
+    <main id="recovery-view" class="tab-content" style="display:none; padding: 20px;">
+        <div id="full-panel">
+            <h3>HISTORIAL DE ACCIONES Y CUARENTENA</h3>
+            <table id="recovery-table">
+                <thead>
+                    <tr><th>TIPO</th><th>OBJETIVO</th><th>ACCIÓN</th><th>HORA</th><th>RECUPERAR</th></tr>
+                </thead>
+                <tbody id="recovery-body"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="/static/js/map.js"></script>
+</body>
+</html>

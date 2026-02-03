@@ -1,0 +1,34 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+dist/
+build/
+*.egg-info/
+
+# --- Entorno y Configuración ---
+.env
+.flaskenv
+*.local
+
+# --- Logs y Bases de Datos ---
+logs/*.log
+*.sqlite
+*.db
+
+# --- Sistema (Windows) ---
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# --- IDEs (VS Code / PyCharm) ---
+.vscode/
+.idea/
+*.swp
+*.bak
+
+# --- Fortaleza Específico ---
