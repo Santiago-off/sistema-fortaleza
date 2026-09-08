@@ -1,85 +1,118 @@
-# 🛡️ SISTEMA FORTALEZA (V.1.0)
+# Sistema Fortaleza
 
-![Status](https://img.shields.io/badge/STATUS-OPERATIONAL-00ff41?style=for-the-badge&logo=target)
-![Python](https://img.shields.io/badge/PYTHON-3.14-0088ff?style=for-the-badge&logo=python&logoColor=white)
-![Platform](https://img.shields.io/badge/PLATFORM-WINDOWS-red?style=for-the-badge&logo=windows&logoColor=white)
-![License](https://img.shields.io/badge/SECURITY-MAXIMUM-yellow?style=for-the-badge)
+Herramienta de diagnóstico y respuesta para Windows: busca persistencia en el registro, relaciona
+cada conexión de red abierta con el proceso que la mantiene y permite actuar sobre lo que
+encuentre desde una consola web.
 
-**SISTEMA FORTALEZA** es una suite de seguridad proactiva y telemetría de red diseñada para el monitoreo en tiempo real, protección de procesos críticos y defensa perimetral. Utiliza un motor híbrido de análisis de integridad y reglas de firewall dinámicas.
+Python · Flask · psutil · winreg
 
----
+<img alt="Arquitectura: la consola web habla con un servidor Flask que coordina cinco módulos —Analyzer, Guardian, Shield, Ghost y Vault— sobre el registro de Windows, los procesos del sistema y netsh" src="docs/arquitectura-oscuro.png">
 
-## ⚡ Instalación y Arranque Rápido
-
-El sistema cuenta con un **Bootloader Táctico** en `main.py` que verifica e instala todas las dependencias necesarias de forma automática.
-
-1.  **Clonar Repositorio:**
-    ```bash
-    git clone [https://github.com/Santiago-off/sistema-fortaleza.git](https://github.com/Santiago-off/sistema-fortaleza.git)
-    cd sistema-fortaleza
-    ```
-2.  **Ejecutar:**
-    Localiza el archivo `run.bat` en la carpeta principal y ejecútalo con doble click.
-
-> 💡 **Nota:** El sistema solicitará automáticamente privilegios de **Administrador** para poder interactuar con el Firewall y las prioridades del Kernel.
+> Diagrama generado con [Archify](https://github.com/tt-a1i/archify) a partir del código de este
+> repositorio. Especificación en [`docs/arquitectura.architecture.json`](docs/arquitectura.architecture.json);
+> versión navegable en [`docs/arquitectura.html`](docs/arquitectura.html).
 
 ---
 
-## 🛠️ Arquitectura del Núcleo (Core)
+## Los cinco módulos
 
-El sistema se divide en módulos especializados para garantizar un blindaje 360°:
+Todo el trabajo vive en [`core/`](core), separado por responsabilidad. El servidor Flask solo
+coordina.
 
-| Módulo | Componente | Función Operativa |
-| :--- | :--- | :--- |
-| 🔍 | **Guardian** | Escaneo de conexiones, rutas de ejecutables y verificación de firmas SHA-256 con caché de alta eficiencia. |
-| 🛡️ | **Shield** | Brazo ejecutor. Realiza bloqueos de IP mediante `netsh` y exterminio de procesos persistentes vía `taskkill`. |
-| 👻 | **Ghost** | Módulo de invisibilidad. Configura DNS seguros (Cloudflare) y bloquea fugas de datos en protocolos IPv6. |
-| 🔒 | **Vault** | Protección del proceso Fortaleza. Eleva la prioridad en la CPU y bloquea el Working Set en la RAM física. |
-| 🧠 | **Analyzer** | Escaneo heurístico de persistencia en el Registro de Windows (HKCU/HKLM) y cálculo de entropía de archivos. |
+### `Analyzer` · qué arranca con el sistema
 
----
+Recorre las tres colmenas donde el malware se engancha para sobrevivir a un reinicio:
 
-## 📊 Centro de Mando (Interfaz Web)
+```python
+(winreg.HKEY_CURRENT_USER,  r"Software\Microsoft\Windows\CurrentVersion\Run")
+(winreg.HKEY_LOCAL_MACHINE, r"Software\Microsoft\Windows\CurrentVersion\Run")
+(winreg.HKEY_LOCAL_MACHINE, r"Software\Microsoft\Windows\CurrentVersion\RunOnce")
+```
 
-Una vez iniciado, el sistema despliega un servidor Flask de alta disponibilidad. Puedes acceder a la consola táctica en:
+De cada entrada saca el SHA-256 del binario y calcula su **entropía de Shannon** sobre los
+primeros 10 KB:
 
-🔗 **Consola:** `http://localhost:5000`
+```python
+entropy = 0
+for x in range(256):
+    p_x = float(data.count(x)) / len(data)
+    if p_x > 0:
+        entropy += - p_x * math.log(p_x, 2)
+```
 
-### Acciones Disponibles:
-* **PAUSE (⏸️):** Suspende los hilos del proceso sin terminarlo (Modo Cuarentena).
-* **BLOCK IP (🛡️):** Corta toda comunicación entrante y saliente con la IP remota seleccionada.
-* **TERMINATE (🚫):** Cierra el proceso y lo añade a una **Lista Negra** activa que impide su reapertura.
+Un ejecutable normal ronda 6. Cuanto más se acerca a **8**, más uniforme es la distribución de
+bytes: es la firma de un fichero cifrado, comprimido o empaquetado para esconder lo que hace.
 
----
-## 🛡️ Seguridad y Privacidad
-Cero Fugas: Ghost desactiva DNS de IPv6 para forzar el tráfico por túneles conocidos.
+### `Guardian` · quién está hablando con fuera
 
-Integridad: Cada proceso detectado es verificado contra un Hash SHA-256 único.
+Enumera las conexiones con `psutil.net_connections(kind='inet')` y remonta cada una hasta su PID,
+su ejecutable y el hash de ese ejecutable. El hash se cachea con `functools`, porque el mismo
+binario aparece en muchas conexiones y calcularlo cada vez bloquearía la interfaz.
 
-Auto-Purga: El sistema incluye un hilo daemon que escanea el sistema cada 3 segundos en busca de procesos reincidentes en la lista negra.
+### `Shield` · cortar
 
+Suspende, reanuda o termina un proceso, y levanta reglas de cortafuegos contra una dirección en
+los dos sentidos y en los tres perfiles de red:
 
-## ⚠️ ADVERTENCIA:
-    Este software interactúa con configuraciones críticas del sistema operativo. Úselo de manera responsable.
+```
+netsh advfirewall firewall add rule name="FORTALEZA_BLOCK_<ip>_OUT" dir=out action=block remoteip=<ip> profile=any
+netsh advfirewall firewall add rule name="FORTALEZA_BLOCK_<ip>_IN"  dir=in  action=block remoteip=<ip> profile=any
+```
 
----
+### `Ghost` · red
 
-## 📂 Estructura del Proyecto
+Detecta la interfaz activa leyendo la tabla de rutas en vez de suponerla, cambia el resolutor DNS
+a `1.1.1.1` / `1.0.0.1`, deja IPv6 sin resolutor para que no se filtren consultas por ahí, y vacía
+la caché. La vuelta atrás devuelve la interfaz a DHCP.
 
-El proyecto mantiene una jerarquía estricta para asegurar la estabilidad:
+### `Vault` · privilegios
 
-```text
-sistema-fortaleza/
-├── core/                # Librerías de seguridad y motores de análisis
-│   ├── analyzer.py      # Escáner de persistencia y entropía
-│   ├── ghost.py         # Gestión de DNS y privacidad
-│   ├── guardian.py      # Telemetría de red y hashes
-│   ├── shield.py        # Control de Firewall y procesos
-│   └── vault.py         # Autoprotección y prioridad
-├── web/                 # Servidor de interfaz y recursos estáticos
-│   ├── static/          # CSS (Cyberpunk Style) y JS (Radar SVG)
-│   ├── templates/       # HTML principal (index.html)
-│   └── server.py        # Cerebro de la API y Vigilante (auto_purge)
-├── logs/                # Historial de detecciones y bloqueos
-├── main.py              # Bootloader y Elevador de Privilegios
-└── run.bat              # Lanzador rápido (Directo a ejecución)
+Comprueba que el proceso tiene permisos de administrador —sin ellos ni `netsh` ni las colmenas de
+`HKLM` responden— y sube su prioridad de planificación para que el análisis no se quede atrás
+cuando el sistema está cargado.
+
+## La consola
+
+Flask sirve una interfaz de una sola página con la lista de nodos detectados, el historial de
+acciones y los botones para actuar.
+
+| Ruta | Qué devuelve |
+|---|---|
+| `GET /api/nodes` | Conexiones y procesos detectados |
+| `GET /api/history` | Historial de acciones ejecutadas |
+| `GET /api/scan_proactive` | Lanza un análisis de persistencia |
+| `POST /api/action` | Aísla, termina o bloquea |
+| `POST /api/ghost/toggle` | Activa o desactiva el cambio de DNS |
+| `POST /api/revert` | Deshace una acción del historial |
+
+Las acciones se ejecutan en un hilo aparte para que la interfaz no se congele mientras `netsh`
+responde.
+
+## Estructura
+
+```
+main.py                  eleva privilegios y arranca
+core/
+├── analyzer.py          registro, hashes y entropía
+├── guardian.py          conexiones y procesos
+├── shield.py            terminar procesos y reglas de cortafuegos
+├── ghost.py             resolutor DNS de la interfaz activa
+└── vault.py             privilegios y prioridad
+web/
+├── server.py            API y coordinación
+├── templates/index.html
+└── static/              consola
+```
+
+## Requisitos y arranque
+
+Windows, Python 3 y **permisos de administrador**: sin ellos no se puede leer `HKLM`, ni cambiar
+reglas de cortafuegos, ni tocar la configuración DNS de una interfaz.
+
+```bash
+pip install -r requirements.txt
+python main.py
+```
+
+`main.py` detecta si se ha lanzado sin privilegios y se relanza a sí mismo pidiéndolos. La consola
+queda en el puerto `5000`.

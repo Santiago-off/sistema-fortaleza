@@ -1,0 +1,354 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Sistema Fortaleza",
+    "output": "arquitectura.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "deteccion",
+        "label": "Detección",
+        "focus": [
+          "flask",
+          "analyzer",
+          "guardian",
+          "registro"
+        ],
+        "note": "Analyzer busca persistencia en el registro y mide la entropía; Guardian une cada conexión abierta con su proceso."
+      },
+      {
+        "id": "respuesta",
+        "label": "Respuesta",
+        "focus": [
+          "flask",
+          "shield",
+          "netsh",
+          "procesos"
+        ],
+        "note": "Shield suspende o termina procesos y levanta reglas de cortafuegos de entrada y salida contra una dirección."
+      },
+      {
+        "id": "red",
+        "label": "Red",
+        "focus": [
+          "ghost",
+          "netsh",
+          "vault"
+        ],
+        "note": "Ghost cambia el resolutor DNS de la interfaz activa y puede devolverlo a la configuración del operador."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "navegador",
+      "type": "external",
+      "label": "Consola web",
+      "sublabel": "Navegador",
+      "pos": [
+        40,
+        309
+      ],
+      "size": [
+        155,
+        60
+      ]
+    },
+    {
+      "id": "flask",
+      "type": "backend",
+      "label": "Servidor Flask",
+      "sublabel": "/api/*",
+      "pos": [
+        275,
+        306
+      ],
+      "size": [
+        180,
+        66
+      ],
+      "tag": "privilegios de admin"
+    },
+    {
+      "id": "analyzer",
+      "type": "backend",
+      "label": "Analyzer",
+      "sublabel": "persistencia y entropía",
+      "pos": [
+        585,
+        110
+      ],
+      "size": [
+        190,
+        58
+      ]
+    },
+    {
+      "id": "guardian",
+      "type": "backend",
+      "label": "Guardian",
+      "sublabel": "conexiones activas",
+      "pos": [
+        585,
+        210
+      ],
+      "size": [
+        190,
+        58
+      ]
+    },
+    {
+      "id": "shield",
+      "type": "security",
+      "label": "Shield",
+      "sublabel": "procesos y cortafuegos",
+      "pos": [
+        585,
+        310
+      ],
+      "size": [
+        190,
+        58
+      ]
+    },
+    {
+      "id": "ghost",
+      "type": "security",
+      "label": "Ghost",
+      "sublabel": "resolutor DNS",
+      "pos": [
+        585,
+        410
+      ],
+      "size": [
+        190,
+        58
+      ]
+    },
+    {
+      "id": "vault",
+      "type": "security",
+      "label": "Vault",
+      "sublabel": "prioridad y privilegios",
+      "pos": [
+        585,
+        510
+      ],
+      "size": [
+        190,
+        58
+      ]
+    },
+    {
+      "id": "registro",
+      "type": "external",
+      "label": "Registro de Windows",
+      "sublabel": "claves Run y RunOnce",
+      "pos": [
+        905,
+        110
+      ],
+      "size": [
+        200,
+        58
+      ]
+    },
+    {
+      "id": "procesos",
+      "type": "external",
+      "label": "Procesos del sistema",
+      "sublabel": "psutil",
+      "pos": [
+        905,
+        210
+      ],
+      "size": [
+        200,
+        58
+      ]
+    },
+    {
+      "id": "netsh",
+      "type": "external",
+      "label": "netsh",
+      "sublabel": "cortafuegos e interfaces",
+      "pos": [
+        905,
+        380
+      ],
+      "size": [
+        200,
+        58
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "core/",
+      "wraps": [
+        "analyzer",
+        "guardian",
+        "shield",
+        "ghost",
+        "vault"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "Superficie del sistema",
+      "wraps": [
+        "registro",
+        "procesos",
+        "netsh"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "entrada",
+      "from": "navegador",
+      "to": "flask",
+      "label": "HTTP :5000",
+      "variant": "emphasis"
+    },
+    {
+      "id": "a_analyzer",
+      "from": "flask",
+      "to": "analyzer",
+      "via": [
+        [
+          500,
+          339
+        ],
+        [
+          500,
+          139
+        ]
+      ]
+    },
+    {
+      "id": "a_guardian",
+      "from": "flask",
+      "to": "guardian",
+      "via": [
+        [
+          530,
+          339
+        ],
+        [
+          530,
+          239
+        ]
+      ]
+    },
+    {
+      "id": "a_shield",
+      "from": "flask",
+      "to": "shield",
+      "variant": "emphasis"
+    },
+    {
+      "id": "a_ghost",
+      "from": "flask",
+      "to": "ghost",
+      "via": [
+        [
+          530,
+          339
+        ],
+        [
+          530,
+          439
+        ]
+      ]
+    },
+    {
+      "id": "a_vault",
+      "from": "flask",
+      "to": "vault",
+      "via": [
+        [
+          500,
+          339
+        ],
+        [
+          500,
+          539
+        ]
+      ]
+    },
+    {
+      "id": "lee_registro",
+      "from": "analyzer",
+      "to": "registro",
+      "label": "lee claves de arranque",
+      "labelAt": [
+        840,
+        122
+      ]
+    },
+    {
+      "id": "lee_procesos",
+      "from": "guardian",
+      "to": "procesos",
+      "label": "enumera y hashea",
+      "labelAt": [
+        840,
+        222
+      ]
+    },
+    {
+      "id": "reglas",
+      "from": "shield",
+      "to": "netsh",
+      "label": "bloquea IP",
+      "variant": "security",
+      "labelAt": [
+        845,
+        325
+      ]
+    },
+    {
+      "id": "dns",
+      "from": "ghost",
+      "to": "netsh",
+      "label": "fija DNS",
+      "variant": "security",
+      "labelAt": [
+        845,
+        465
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Análisis",
+      "items": [
+        "Claves Run y RunOnce de HKCU y HKLM",
+        "SHA-256 de cada binario, con caché",
+        "Entropía de Shannon: cerca de 8 delata cifrado o empaquetado"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Respuesta",
+      "items": [
+        "Suspender, reanudar o terminar un proceso",
+        "Reglas de cortafuegos de entrada y salida por dirección",
+        "Historial de acciones con posibilidad de revertir"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Red",
+      "items": [
+        "Detecta la interfaz activa por la ruta predeterminada",
+        "Resolutor DNS a 1.1.1.1 y vaciado de caché",
+        "Vuelta a la configuración del operador por DHCP"
+      ]
+    }
+  ]
+}
