@@ -1,4 +1,2 @@
 flask
 psutil
-axios-python  # (O simplemente usar axios vía CDN en el HTML)
-requests

@@ -3,8 +3,9 @@ import subprocess
 import ctypes
 import os
 
-# Lista de dependencias necesarias
-DEPENDENCIES = ["flask", "psutil", "requests", "axios-python"]
+# Lista de dependencias necesarias (las que el código Python importa de verdad).
+# La consola web carga axios desde un CDN, no como paquete de Python.
+DEPENDENCIES = ["flask", "psutil"]
 
 def is_admin():
     try:
